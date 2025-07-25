@@ -30,7 +30,7 @@ exports.findAll = async (req, res, next) => {
         const contactService = new ContactService(MongoDB.client);
         const {name} = req.query;
         if (name) {
-            contacts = await contactService.findByName(name);
+            contacts = await contactService.findByName(req.query.name);
         } else {
             contacts = await contactService.find({});
         }
@@ -39,7 +39,7 @@ exports.findAll = async (req, res, next) => {
         return next(new ApiError(500, "No contacts found"));
     }
       return res.send(contacts);
-     
+      console.log(contacts); // Add this line for debugging
 };
 exports.findOne = async (req, res, next) => {
     try {
@@ -55,17 +55,30 @@ exports.findOne = async (req, res, next) => {
 };
 
 exports.update = async (req, res, next) => {
+    console.log("📥 [Controller] update() called with ID:", req.params.id);
     try {
         const contactService = new ContactService(MongoDB.client);
         const updated = await contactService.update(req.params.id, req.body);
-        if (!updated) {
-            return next(new ApiError(404, "Contact not found"));
-        }
-        res.send(updated);
+        console.log("✅ [Controller] Updated contact:", updated);
+        return res.send(updated);
     } catch (error) {
-        return next(new ApiError(500, "Error updating contact"));
+        console.error("❌ [Controller] Update failed:");
+        console.error("Message:", error.message);
+        console.error("Stack:", error.stack);
+        console.error("Full:", error);
+
+        // Respond with raw error for now
+        return res.status(500).json({
+            message: "Error updating contact",
+            error: error.message,
+            stack: error.stack
+        });
     }
 };
+
+
+
+
 
 exports.delete = async (req, res, next) => {
     try {
@@ -99,4 +112,3 @@ exports.findAllFavorite = async (req, res, next) => {
         return next(new ApiError(500, "Error retrieving favorite contacts"));
     }
 };
-

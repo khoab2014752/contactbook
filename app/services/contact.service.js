@@ -50,21 +50,41 @@ class ContactService {
         return this.contacts.findOne({ _id: new ObjectId(id) });
     }
 
+
     async update(id, payload) {
-        const update = this.extractContactData(payload);
-        const result = await this.contacts.findOneAndUpdate(
-            { _id: new ObjectId(id) },
-            { $set: update },
-            { returnDocument: 'after' }
-        );
-        return result.value;
+    console.log("📤 [Service] update() called with:", id, payload);
+
+    if (!ObjectId.isValid(id)) {
+        throw new Error("Invalid contact ID");
     }
 
+    const update = this.extractContactData(payload);
+    console.log("📤 [Service] Payload after extract:", update);
+
+    const filter = { _id: new ObjectId(id) };
+
+    // Step 1: update
+    const updateResult = await this.contacts.updateOne(filter, { $set: update });
+    console.log("🧪 [Mongo] updateOne result:", updateResult);
+
+    if (updateResult.matchedCount === 0) {
+        throw new Error("Contact not found");
+    }
+
+    // Step 2: fetch updated doc
+    const updatedDoc = await this.contacts.findOne(filter);
+    console.log("✅ [Mongo] Updated contact:", updatedDoc);
+
+    return updatedDoc;
+}
+
+
+
+
+
     async delete(id) {
-        const result = await this.contacts.findOneAndDelete({
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
-         });
-        return result;
+        const result = await this.contacts.findOneAndDelete({ _id: new ObjectId(id) });
+        return result.value;
     }
 
     async deleteAll() {
